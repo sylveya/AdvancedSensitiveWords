@@ -3,6 +3,7 @@ package io.wdsj.asw.bukkit.listener
 import io.wdsj.asw.bukkit.AdvancedSensitiveWords
 import io.wdsj.asw.bukkit.permission.PermissionsEnum
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionResolver
+import io.wdsj.asw.bukkit.permission.option.PlayerOptionScope
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionView
 import io.wdsj.asw.bukkit.permission.option.PlayerOptions
 import io.wdsj.asw.bukkit.setting.PaperConfigurationService
@@ -34,7 +35,11 @@ class BookListener(private val configuration: PaperConfigurationService) : Liste
         val player = event.player
         if (processingGuard.shouldSkipBasic(player, PermissionsEnum.BYPASS_BOOK)) return
         val options = PlayerOptionResolver.resolve(configuration, player)
+        PlayerOptionScope.run(options) { processBook(event, options) }
+    }
 
+    private fun processBook(event: PlayerEditBookEvent, options: PlayerOptionView) {
+        val player = event.player
         val startTime = System.currentTimeMillis()
         val bookMeta = event.newBookMeta
         var violation = censorPages(event, bookMeta, options)
@@ -134,8 +139,9 @@ class BookListener(private val configuration: PaperConfigurationService) : Liste
         if (!options.bool(PlayerOptions.BOOK_CACHE_ENABLE_CACHE, PluginSettings.BOOK_CACHE)) {
             return AdvancedSensitiveWords.findAllSensitive(page)
         }
-        if (BookCache.isBookCached(page)) {
-            return BookCache.getCachedBookSensitiveWordList(page)
+        val cacheKey = bookCacheKey(page, options)
+        if (BookCache.isBookCached(cacheKey)) {
+            return BookCache.getCachedBookSensitiveWordList(cacheKey)
         }
         return AdvancedSensitiveWords.findAllSensitive(page)
     }
@@ -144,13 +150,22 @@ class BookListener(private val configuration: PaperConfigurationService) : Liste
         if (!options.bool(PlayerOptions.BOOK_CACHE_ENABLE_CACHE, PluginSettings.BOOK_CACHE)) {
             return MessageUtils.replaceLiteral(page, pagePlainText, AdvancedSensitiveWords.replaceSensitive(pagePlainText))
         }
-        if (BookCache.isBookCached(pagePlainText)) {
-            return MessageUtils.replaceLiteral(page, pagePlainText, BookCache.getCachedProcessedBookContent(pagePlainText))
+        val cacheKey = bookCacheKey(pagePlainText, options)
+        if (BookCache.isBookCached(cacheKey)) {
+            return MessageUtils.replaceLiteral(page, pagePlainText, BookCache.getCachedProcessedBookContent(cacheKey))
         }
 
         val processedPage = AdvancedSensitiveWords.replaceSensitive(pagePlainText)
-        BookCache.addToBookCache(pagePlainText, processedPage, censoredWords)
+        BookCache.addToBookCache(cacheKey, processedPage, censoredWords)
         return MessageUtils.replaceLiteral(page, pagePlainText, processedPage)
+    }
+
+    private fun bookCacheKey(content: String, options: PlayerOptionView): String {
+        val obfuscatedUrlCheck = options.bool(
+            PlayerOptions.NETWORK_OBFUSCATED_URL_CHECK,
+            PluginSettings.ENABLE_OBFUSCATED_URL_CHECK,
+        )
+        return "${if (obfuscatedUrlCheck) 1 else 0}\u0000$content"
     }
 
     private fun preprocessPage(page: Component, options: PlayerOptionView): String {

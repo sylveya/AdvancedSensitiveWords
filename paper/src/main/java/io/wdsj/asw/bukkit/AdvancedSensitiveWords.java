@@ -25,6 +25,8 @@ import io.wdsj.asw.bukkit.manage.punish.PlayerShadowController;
 import io.wdsj.asw.bukkit.manage.punish.ViolationCounter;
 import io.wdsj.asw.bukkit.method.*;
 import io.wdsj.asw.bukkit.permission.cache.CachingPermTool;
+import io.wdsj.asw.bukkit.permission.option.PlayerOptionScope;
+import io.wdsj.asw.bukkit.permission.option.PlayerOptions;
 import io.wdsj.asw.bukkit.proxy.velocity.VelocityChannel;
 import io.wdsj.asw.bukkit.proxy.velocity.VelocityReceiver;
 import io.wdsj.asw.bukkit.proxy.velocity.sync.VelocitySyncClient;
@@ -41,6 +43,7 @@ import io.wdsj.asw.bukkit.util.context.ChatContext;
 import io.wdsj.asw.bukkit.util.context.SignContext;
 import io.wdsj.asw.common.environment.PluginBuildInfo;
 import io.wdsj.asw.common.update.Updater;
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import org.bstats.bukkit.Metrics;
 import org.bstats.charts.SimplePie;
 import org.bstats.charts.SingleLineChart;
@@ -50,7 +53,6 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -382,7 +384,7 @@ public final class AdvancedSensitiveWords extends JavaPlugin {
     }
 
     public static List<String> findAllSensitive(String text) {
-        LinkedHashSet<String> results = new LinkedHashSet<>();
+        ObjectLinkedOpenHashSet<String> results = new ObjectLinkedOpenHashSet<>(12, 0.5f);
         SensitiveWordBs wordBs = sensitiveWordBs;
         if (wordBs != null) {
             results.addAll(wordBs.findAll(text));
@@ -391,7 +393,7 @@ public final class AdvancedSensitiveWords extends JavaPlugin {
         if (networkWordBs != null) {
             results.addAll(networkWordBs.findAll(text));
         }
-        ObfuscatedUrlDetector urlDetector = obfuscatedUrlDetector;
+        ObfuscatedUrlDetector urlDetector = obfuscatedUrlDetector();
         if (urlDetector != null) {
             urlDetector.findAll(text).stream()
                     .map(IWordResult::word)
@@ -410,7 +412,7 @@ public final class AdvancedSensitiveWords extends JavaPlugin {
         if (networkWordBs != null) {
             results.addAll(networkWordBs.findAll(text, WordResultHandlers.raw()));
         }
-        ObfuscatedUrlDetector urlDetector = obfuscatedUrlDetector;
+        ObfuscatedUrlDetector urlDetector = obfuscatedUrlDetector();
         if (urlDetector != null) {
             results.addAll(urlDetector.findAll(text));
         }
@@ -418,7 +420,7 @@ public final class AdvancedSensitiveWords extends JavaPlugin {
     }
 
     public static String replaceSensitive(String text) {
-        ObfuscatedUrlDetector urlDetector = obfuscatedUrlDetector;
+        ObfuscatedUrlDetector urlDetector = obfuscatedUrlDetector();
         String obfuscatedUrlReplaced = urlDetector == null
                 ? text
                 : replaceMappedResults(text, urlDetector.findAll(text));
@@ -426,6 +428,21 @@ public final class AdvancedSensitiveWords extends JavaPlugin {
         String result = wordBs == null ? obfuscatedUrlReplaced : wordBs.replace(obfuscatedUrlReplaced);
         SensitiveWordBs networkWordBs = networkSensitiveWordBs;
         return networkWordBs == null ? result : networkWordBs.replace(result);
+    }
+
+    private static ObfuscatedUrlDetector obfuscatedUrlDetector() {
+        ObfuscatedUrlDetector detector = obfuscatedUrlDetector;
+        if (detector == null) {
+            return null;
+        }
+        var options = PlayerOptionScope.currentOrNull();
+        if (options == null || options.bool(
+                PlayerOptions.NETWORK_OBFUSCATED_URL_CHECK,
+                PluginSettings.ENABLE_OBFUSCATED_URL_CHECK
+        )) {
+            return detector;
+        }
+        return null;
     }
 
     private static String replaceMappedResults(String text, List<IWordResult> results) {

@@ -7,6 +7,7 @@ import io.wdsj.asw.bukkit.integration.trchat.TrChatCompat
 import io.wdsj.asw.bukkit.listener.abstraction.AbstractFakeMessageExecutor
 import io.wdsj.asw.bukkit.permission.PermissionsEnum
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionResolver
+import io.wdsj.asw.bukkit.permission.option.PlayerOptionScope
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionView
 import io.wdsj.asw.bukkit.permission.option.PlayerOptions
 import io.wdsj.asw.bukkit.service.chat.antispam.ChatAntiSpamService
@@ -45,7 +46,10 @@ class PaperChatListener(
         val player = event.player
         if (processingGuard.shouldSkip(player, PermissionsEnum.BYPASS_CHAT)) return
         val options = PlayerOptionResolver.resolve(configuration, player)
+        PlayerOptionScope.run(options) { processChat(event, player, options) }
+    }
 
+    private fun processChat(event: AsyncChatEvent, player: Player, options: PlayerOptionView) {
         val startTime = System.currentTimeMillis()
         val originalMessage = preprocess(event.message())
         val originalPlainText = PlainTextComponentSerializer.plainText().serialize(originalMessage)

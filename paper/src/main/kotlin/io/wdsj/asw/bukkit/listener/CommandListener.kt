@@ -4,6 +4,7 @@ import io.wdsj.asw.bukkit.AdvancedSensitiveWords
 import io.wdsj.asw.bukkit.listener.command.CommandArgumentRuleSet
 import io.wdsj.asw.bukkit.permission.PermissionsEnum
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionResolver
+import io.wdsj.asw.bukkit.permission.option.PlayerOptionScope
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionView
 import io.wdsj.asw.bukkit.permission.option.PlayerOptions
 import io.wdsj.asw.bukkit.setting.PaperConfigurationService
@@ -30,11 +31,14 @@ class CommandListener(private val configuration: PaperConfigurationService) : Li
         val globalEnabled = configuration.get(PluginSettings.ENABLE_CHAT_CHECK)
         if (!globalEnabled) return
 
-        val originalCommand = preprocess(event.message)
         val player = event.player
         if (processingGuard.shouldSkip(player, PermissionsEnum.BYPASS_COMMAND)) return
         val options = PlayerOptionResolver.resolve(configuration, player)
+        PlayerOptionScope.run(options) { processCommand(event, player, options) }
+    }
 
+    private fun processCommand(event: PlayerCommandPreprocessEvent, player: Player, options: PlayerOptionView) {
+        val originalCommand = preprocess(event.message)
         val selection = configuration.commandArgumentRules().select(originalCommand)
         if (!configuration.shouldInspectCommand(selection) || selection.segments().isEmpty()) return
 

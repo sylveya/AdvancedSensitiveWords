@@ -4,6 +4,7 @@ import com.github.houbb.sensitive.word.api.IWordResult
 import io.wdsj.asw.bukkit.AdvancedSensitiveWords
 import io.wdsj.asw.bukkit.permission.PermissionsEnum
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionResolver
+import io.wdsj.asw.bukkit.permission.option.PlayerOptionScope
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionView
 import io.wdsj.asw.bukkit.permission.option.PlayerOptions
 import io.wdsj.asw.bukkit.setting.PaperConfigurationService
@@ -47,6 +48,10 @@ class SignListener(private val configuration: PaperConfigurationService) : Liste
         val player = event.player
         if (processingGuard.shouldSkipBasic(player, PermissionsEnum.BYPASS_SIGN)) return
         val options = PlayerOptionResolver.resolve(configuration, player)
+        PlayerOptionScope.run(options) { processSign(event, player, options) }
+    }
+
+    private fun processSign(event: SignChangeEvent, player: Player, options: PlayerOptionView) {
         val attemptedLines = event.lines().toList()
         if (PlayerShadowController.isShadowed(player)) {
             if (SignFakeViewCompat.recordShadowEdit(event, player, attemptedLines)) {

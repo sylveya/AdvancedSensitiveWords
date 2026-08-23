@@ -3,6 +3,7 @@ package io.wdsj.asw.bukkit.listener
 import io.wdsj.asw.bukkit.AdvancedSensitiveWords
 import io.wdsj.asw.bukkit.permission.PermissionsEnum
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionResolver
+import io.wdsj.asw.bukkit.permission.option.PlayerOptionScope
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionView
 import io.wdsj.asw.bukkit.permission.option.PlayerOptions
 import io.wdsj.asw.bukkit.setting.PaperConfigurationService
@@ -35,7 +36,10 @@ class AnvilListener(private val configuration: PaperConfigurationService) : List
         val player = event.whoClicked as? Player ?: return
         if (processingGuard.shouldSkipBasic(player, PermissionsEnum.BYPASS_ANVIL)) return
         val options = PlayerOptionResolver.resolve(configuration, player)
+        PlayerOptionScope.run(options) { processAnvil(event, player, options) }
+    }
 
+    private fun processAnvil(event: InventoryClickEvent, player: Player, options: PlayerOptionView) {
         val outputItem = event.currentItem ?: return
         if (!outputItem.hasItemMeta()) return
 

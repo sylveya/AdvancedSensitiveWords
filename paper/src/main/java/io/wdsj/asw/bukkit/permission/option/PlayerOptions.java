@@ -4,6 +4,7 @@ package io.wdsj.asw.bukkit.permission.option;
  * Player-scoped option permission paths below {@code advancedsensitivewords.option}.
  */
 public final class PlayerOptions {
+    public static final String NETWORK_OBFUSCATED_URL_CHECK = "network.obfuscated-url-check";
     public static final String CHAT_METHOD = "chat.method";
     public static final String CHAT_FAKE_MESSAGE_ON_CANCEL = "chat.fake-message-on-cancel";
     public static final String CHAT_SEND_MESSAGE = "chat.send-message";

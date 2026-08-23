@@ -68,6 +68,10 @@ permissions:
       advancedsensitivewords.option.anvil.*: true
       advancedsensitivewords.option.item.*: true
       advancedsensitivewords.option.ai.*: true
+      advancedsensitivewords.option.network.*: true
+  advancedsensitivewords.option.network.*:
+    description: Network-address detection option overrides.
+    default: false
   advancedsensitivewords.option.chat.*:
     description: Chat, command, anti-spam, and chat AI option overrides.
     default: false

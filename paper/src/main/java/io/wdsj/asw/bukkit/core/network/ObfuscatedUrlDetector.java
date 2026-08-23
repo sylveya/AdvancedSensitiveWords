@@ -8,11 +8,11 @@ import com.github.houbb.sensitive.word.support.resultcondition.WordResultConditi
 import com.github.houbb.sensitive.word.support.tag.WordTags;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,7 +67,7 @@ public final class ObfuscatedUrlDetector implements AutoCloseable {
             return List.of();
         }
 
-        Map<SourceRange, IWordResult> mappedResults = new LinkedHashMap<>();
+        Map<SourceRange, IWordResult> mappedResults = new Object2ObjectLinkedOpenHashMap<>();
         for (IWordResult result : normalizedResults) {
             int normalizedStart = result.startIndex();
             int normalizedEnd = result.endIndex();

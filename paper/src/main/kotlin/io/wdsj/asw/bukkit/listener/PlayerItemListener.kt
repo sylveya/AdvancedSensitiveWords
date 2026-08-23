@@ -3,6 +3,7 @@ package io.wdsj.asw.bukkit.listener
 import io.wdsj.asw.bukkit.AdvancedSensitiveWords
 import io.wdsj.asw.bukkit.permission.PermissionsEnum
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionResolver
+import io.wdsj.asw.bukkit.permission.option.PlayerOptionScope
 import io.wdsj.asw.bukkit.permission.option.PlayerOptionView
 import io.wdsj.asw.bukkit.permission.option.PlayerOptions
 import io.wdsj.asw.bukkit.setting.PaperConfigurationService
@@ -40,7 +41,7 @@ class PlayerItemListener(private val configuration: PaperConfigurationService) :
         val options = PlayerOptionResolver.resolve(configuration, player)
 
         val item = player.inventory.getItem(event.newSlot) ?: return
-        censorItemName(player, item, event, options)
+        PlayerOptionScope.run(options) { censorItemName(player, item, event, options) }
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -52,7 +53,7 @@ class PlayerItemListener(private val configuration: PaperConfigurationService) :
         if (processingGuard.shouldSkipBasic(player, PermissionsEnum.BYPASS_ITEM)) return
         val options = PlayerOptionResolver.resolve(configuration, player)
 
-        censorItemName(player, event.itemDrop.itemStack, event, options)
+        PlayerOptionScope.run(options) { censorItemName(player, event.itemDrop.itemStack, event, options) }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -66,7 +67,7 @@ class PlayerItemListener(private val configuration: PaperConfigurationService) :
         val options = PlayerOptionResolver.resolve(configuration, player)
 
         val item = event.currentItem ?: return
-        censorItemName(player, item, event, options)
+        PlayerOptionScope.run(options) { censorItemName(player, item, event, options) }
     }
 
     private fun censorItemName(player: Player, item: ItemStack, event: Cancellable, options: PlayerOptionView) {
